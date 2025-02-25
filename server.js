@@ -106,27 +106,26 @@ app.get('/productos', async (req, res) => {
     }
 });
 
-app.post('/guardar-productos', async (req, res) => {
+app.post('/guardar-productos', (req, res) => {
     const fileContent = req.body.fileContent;
-    try {
-        await axios.post('https://deploy-vercel-khaki.vercel.app/productos', { fileContent });
-        
-        // Enviar mensaje a todos los clientes conectados
-        const message = JSON.stringify({
-            type: 'updateProducts',
-            fileContent: fileContent
-        });
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
-        });
+    fs.writeFile(path.join(__dirname, 'model', 'productos.txt'), fileContent, 'utf8', (err) => {
+        if (err) {
+            res.status(500).send('Error al guardar el archivo de productos');
+        } else {
+            // Enviar mensaje a todos los clientes conectados
+            const message = JSON.stringify({
+                type: 'updateProducts',
+                fileContent: fileContent
+            });
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(message);
+                }
+            });
 
-        res.send('Archivo de productos guardado exitosamente');
-    } catch (err) {
-        console.error("Error al guardar productos:", err);
-        res.status(500).send('Error al guardar los productos');
-    }
+            res.send('Archivo de productos guardado exitosamente');
+        }
+    });
 });
 
 // Usar http.listen en lugar de app.listen
