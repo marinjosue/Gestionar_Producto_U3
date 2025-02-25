@@ -5,6 +5,7 @@ const path = require('path');
 const app = express();
 const http = require('http').createServer(app);
 const WebSocket = require('ws');
+const axios = require('axios');
 
 const PORT = 3000;
 
@@ -94,38 +95,38 @@ wss.on('connection', (ws) => {
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'view', 'index.html'));
 });
-
 app.get('/productos', async (req, res) => {
     try {
-        const data = await fs.promises.readFile(path.join(__dirname, 'model', 'productos.txt'), 'utf8');
-        res.setHeader('Content-Type', 'text/plain');
-        res.send(data);
+        const response = await axios.get('https://deploy-vercel-khaki.vercel.app/productos');
+        res.setHeader('Content-Type', 'application/json');
+        res.send(response.data);
     } catch (err) {
-        console.error("Error al leer productos.txt:", err);
-        res.status(500).send('Error al leer el archivo de productos');
+        console.error("Error al obtener productos:", err);
+        res.status(500).send('Error al obtener los productos');
     }
 });
 
-app.post('/guardar-productos', (req, res) => {
+app.post('/guardar-productos', async (req, res) => {
     const fileContent = req.body.fileContent;
-    fs.writeFile(path.join(__dirname, 'model', 'productos.txt'), fileContent, 'utf8', (err) => {
-        if (err) {
-            res.status(500).send('Error al guardar el archivo de productos');
-        } else {
-            // Enviar mensaje a todos los clientes conectados
-            const message = JSON.stringify({
-                type: 'updateProducts',
-                fileContent: fileContent
-            });
-            wss.clients.forEach((client) => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(message);
-                }
-            });
+    try {
+        await axios.post('https://deploy-vercel-khaki.vercel.app/productos', { fileContent });
+        
+        // Enviar mensaje a todos los clientes conectados
+        const message = JSON.stringify({
+            type: 'updateProducts',
+            fileContent: fileContent
+        });
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message);
+            }
+        });
 
-            res.send('Archivo de productos guardado exitosamente');
-        }
-    });
+        res.send('Archivo de productos guardado exitosamente');
+    } catch (err) {
+        console.error("Error al guardar productos:", err);
+        res.status(500).send('Error al guardar los productos');
+    }
 });
 
 // Usar http.listen en lugar de app.listen
