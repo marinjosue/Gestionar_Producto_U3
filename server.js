@@ -105,27 +105,27 @@ app.get('/productos', async (req, res) => {
         res.status(500).send('Error al obtener el archivo de productos');
     }
 });
-app.post('/guardar-productos', async (req, res) => {
-    const fileContent = req.body.fileContent;
-    try {
-        await axios.post('https://gestionar-producto.vercel.app/guardar-productos', { fileContent });
-        
-        // Enviar mensaje a todos los clientes conectados
-        const message = JSON.stringify({
-            type: 'updateProducts',
-            fileContent: fileContent
-        });
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
-        });
 
-        res.send('Archivo de productos guardado exitosamente');
-    } catch (error) {
-        console.error('Error al guardar productos en la URL remota:', error);
-        res.status(500).send('Error al guardar el archivo de productos');
-    }
+app.post('/guardar-productos', (req, res) => {
+    const fileContent = req.body.fileContent;
+    fs.writeFile(path.join(__dirname, 'model', 'productos.txt'), fileContent, 'utf8', (err) => {
+        if (err) {
+            res.status(500).send('Error al guardar el archivo de productos');
+        } else {
+            // Enviar mensaje a todos los clientes conectados
+            const message = JSON.stringify({
+                type: 'updateProducts',
+                fileContent: fileContent
+            });
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(message);
+                }
+            });
+
+            res.send('Archivo de productos guardado exitosamente');
+        }
+    });
 });
 
 // Usar http.listen en lugar de app.listen
