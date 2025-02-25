@@ -1,5 +1,5 @@
 // main.js
-import ProductService from './productService.js';
+import ProductService from './ProductService.js';
 import { ProductStateObserver } from './ProductStateObserver.js';
 import ProductTable from './ProductTable.js';
 
