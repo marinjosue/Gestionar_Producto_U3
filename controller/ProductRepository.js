@@ -2,7 +2,7 @@
 export default class ProductRepository {
     async fetchProducts() {
         try {
-            const response = await fetch('https://gestionar-producto.vercel.app/productos');
+            const response = await fetch('/productos');
             const data = await response.text();
             const lines = data.trim().split('\n');
             // Se asume que la primera línea es el encabezado
@@ -13,7 +13,7 @@ export default class ProductRepository {
         } catch (error) {
             console.error('Error al cargar los productos:', error);
             throw error;
-        } 
+        }
     }
 
     async saveProducts(products) {
@@ -21,7 +21,7 @@ export default class ProductRepository {
             'ID|Nombre|Stock|Precio|Descuento|Descripción\n' +
             products.map(p => `${p.id}|${p.nombre}|${p.stock}|${p.precio}|${p.descuento}|${p.descripcion}`).join('\n');
         try {
-            const response = await fetch('https://gestionar-producto.vercel.app/guardar-productos', {
+            const response = await fetch('/guardar-productos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileContent })

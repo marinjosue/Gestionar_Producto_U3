@@ -1,7 +1,7 @@
-// server.js
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 const app = express();
 const http = require('http').createServer(app);
 const WebSocket = require('ws');
@@ -95,38 +95,37 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'view', 'index.html'));
 });
 
-app.get('/productos', (req, res) => {
-    fs.readFile(path.join(__dirname, 'model', 'productos.txt'), 'utf8', (err, data) => {
-        if (err) {
-            console.error("Error al leer productos.txt:", err);
-            res.status(500).send('Error al leer el archivo de productos');
-        } else {
-            res.setHeader('Content-Type', 'text/plain');
-            res.send(data);
-        }
-    });
+app.get('/productos', async (req, res) => {
+    try {
+        const response = await axios.get('https://gestionar-producto.vercel.app/productos');
+        res.setHeader('Content-Type', 'text/plain');
+        res.send(response.data);
+    } catch (error) {
+        console.error("Error al obtener productos desde la URL remota:", error);
+        res.status(500).send('Error al obtener el archivo de productos');
+    }
 });
-
-app.post('/guardar-productos', (req, res) => {
+app.post('/guardar-productos', async (req, res) => {
     const fileContent = req.body.fileContent;
-    fs.writeFile(path.join(__dirname, 'model', 'productos.txt'), fileContent, 'utf8', (err) => {
-        if (err) {
-            res.status(500).send('Error al guardar el archivo de productos');
-        } else {
-            // Enviar mensaje a todos los clientes conectados
-            const message = JSON.stringify({
-                type: 'updateProducts',
-                fileContent: fileContent
-            });
-            wss.clients.forEach((client) => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(message);
-                }
-            });
+    try {
+        await axios.post('https://gestionar-producto.vercel.app/guardar-productos', { fileContent });
+        
+        // Enviar mensaje a todos los clientes conectados
+        const message = JSON.stringify({
+            type: 'updateProducts',
+            fileContent: fileContent
+        });
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message);
+            }
+        });
 
-            res.send('Archivo de productos guardado exitosamente');
-        }
-    });
+        res.send('Archivo de productos guardado exitosamente');
+    } catch (error) {
+        console.error('Error al guardar productos en la URL remota:', error);
+        res.status(500).send('Error al guardar el archivo de productos');
+    }
 });
 
 // Usar http.listen en lugar de app.listen

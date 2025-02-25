@@ -2,7 +2,7 @@
 export default class ProductService {
     async fetchProducts() {
         try {
-            const response = await fetch('https://gestionar-producto.vercel.app/productos'); // Endpoint para obtener datos
+            const response = await fetch('/productos'); // Endpoint para obtener datos
             const data = await response.text();
             return this.parseProducts(data);
         } catch (error) {
