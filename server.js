@@ -95,16 +95,15 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'view', 'index.html'));
 });
 
-app.get('/productos', (req, res) => {
-    fs.readFile(path.join(__dirname, 'model', 'productos.txt'), 'utf8', (err, data) => {
-        if (err) {
-            console.error("Error al leer productos.txt:", err);
-            res.status(500).send('Error al leer el archivo de productos');
-        } else {
-            res.setHeader('Content-Type', 'text/plain');
-            res.send(data);
-        }
-    });
+app.get('/productos', async (req, res) => {
+    try {
+        const data = await fs.promises.readFile(path.join(__dirname, 'model', 'productos.txt'), 'utf8');
+        res.setHeader('Content-Type', 'text/plain');
+        res.send(data);
+    } catch (err) {
+        console.error("Error al leer productos.txt:", err);
+        res.status(500).send('Error al leer el archivo de productos');
+    }
 });
 
 app.post('/guardar-productos', (req, res) => {
